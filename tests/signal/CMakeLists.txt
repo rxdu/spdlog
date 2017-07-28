@@ -24,7 +24,7 @@ set(ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 find_package(Threads)
 
 ## Config common include directories
-include_directories(${CMAKE_SOURCE_DIR}/../include)
+include_directories(${CMAKE_SOURCE_DIR}/../../include)
 
 ## Targets
 add_executable(test_signal test_signal.cpp)

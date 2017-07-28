@@ -16,7 +16,8 @@
  * 1. Removed all g3log related header includes and function calls
  * 2. Public API functions are put inside spdlog namespace, others are in spdlog::internal 
  * 3. Added handling of SIGINT: flush logger and exit without stackdump
- * 4. Updated comments to reflect changes
+ * 4. Made functions inline and global variables static
+ * 5. Updated comments to reflect changes
  *
  * Default workflow:
  * 1. Install signal handlers by calling installCrashHandler() in logger() constructor
@@ -72,7 +73,7 @@ typedef int SignalType;
 
 namespace internal
 {
-void restoreSignalHandler(int signal_number)
+inline void restoreSignalHandler(int signal_number)
 {
 #if !(defined(DISABLE_FATAL_SIGNALHANDLING))
     struct sigaction action;
@@ -88,14 +89,14 @@ void restoreSignalHandler(int signal_number)
        *  only in the case of Windows exceptions (not fatal signals)
        *  are we interested in changing this from false to true to
        *  help any other exceptions handler work with 'EXCEPTION_CONTINUE_SEARCH'*/
-bool shouldBlockForFatalHandling()
+inline bool shouldBlockForFatalHandling()
 {
     return true; // For windows we will after fatal processing change it to false
 }
 
 /** \return signal_name Ref: signum.hpp and \ref installSignalHandler
       *  or for Windows exception name */
-std::string exitReasonName(SignalType fatal_id)
+inline std::string exitReasonName(SignalType fatal_id)
 {
     int signal_number = static_cast<int>(fatal_id);
     switch (signal_number)
@@ -126,7 +127,7 @@ std::string exitReasonName(SignalType fatal_id)
 }
 
 /** return calling thread's stackdump*/
-std::string stackdump(const char *rawdump = nullptr)
+inline std::string stackdump(const char *rawdump = nullptr)
 {
     if (nullptr != rawdump && !std::string(rawdump).empty())
     {
@@ -197,7 +198,7 @@ std::string stackdump(const char *rawdump = nullptr)
 /** Re-"throw" a fatal signal, previously caught. This will exit the application
        * This is an internal only function. Do not use it elsewhere. It is triggered
        * from signalHandler() after flushing messages to file */
-void exitWithDefaultSignalHandler(SignalType fatal_signal_id)
+inline void exitWithDefaultSignalHandler(SignalType fatal_signal_id)
 {
     const int signal_number = static_cast<int>(fatal_signal_id);
     restoreSignalHandler(signal_number);
@@ -212,7 +213,7 @@ void exitWithDefaultSignalHandler(SignalType fatal_signal_id)
     exit(signal_number);
 }
 
-const std::map<int, std::string> kSignals = {
+const static std::map<int, std::string> kSignals = {
     {SIGABRT, "SIGABRT"},
     {SIGFPE, "SIGFPE"},
     {SIGILL, "SIGILL"},
@@ -220,9 +221,9 @@ const std::map<int, std::string> kSignals = {
     {SIGTERM, "SIGTERM"},
     {SIGINT, "SIGINT"}};
 
-std::map<int, std::string> gSignals = kSignals;
+static std::map<int, std::string> gSignals = kSignals;
 
-bool shouldDoExit()
+inline bool shouldDoExit()
 {
     static std::atomic<uint64_t> firstExit{0};
     auto const count = firstExit.fetch_add(1, std::memory_order_relaxed);
@@ -232,8 +233,12 @@ bool shouldDoExit()
 // Dump of stack, then exit.
 // ALL thanks to this thread at StackOverflow. Pretty much borrowed from:
 // Ref: http://stackoverflow.com/questions/77005/how-to-generate-a-stacktrace-when-my-gcc-c-app-crashes
-void signalHandler(int signal_number, siginfo_t *info, void *unused_context)
+inline void signalHandler(int signal_number, siginfo_t *info, void *unused_context)
 {
+	// Make compiler happy about unused variables
+	(void)info;
+	(void)unused_context;
+
     // Only one signal will be allowed past this point
     if (false == shouldDoExit())
     {
@@ -268,7 +273,7 @@ void signalHandler(int signal_number, siginfo_t *info, void *unused_context)
 //
 // Installs FATAL signal handler that is enough to handle most fatal events
 //  on *NIX systems
-void installSignalHandler()
+inline void installSignalHandler()
 {
 #if !(defined(DISABLE_FATAL_SIGNALHANDLING))
     struct sigaction action;
@@ -300,7 +305,7 @@ void installSignalHandler()
      SIGILL   ILlegal instruction (ANSI)
      SIGSEGV  Segmentation violation i.e. illegal memory reference
      SIGTERM  TERMINATION (ANSI)  */
-void installCrashHandler()
+inline void installCrashHandler()
 {
     internal::installSignalHandler();
 }
@@ -313,7 +318,7 @@ void installCrashHandler()
 /// call example:
 ///  g3::overrideSetupSignals({ {SIGABRT, "SIGABRT"}, {SIGFPE, "SIGFPE"},{SIGILL, "SIGILL"},
 //                          {SIGSEGV, "SIGSEGV"},});
-void overrideSetupSignals(const std::map<int, std::string> overrideSignals)
+inline void overrideSetupSignals(const std::map<int, std::string> overrideSignals)
 {
     static std::mutex signalLock;
     std::lock_guard<std::mutex> guard(signalLock);
@@ -329,7 +334,7 @@ void overrideSetupSignals(const std::map<int, std::string> overrideSignals)
 /// Probably only needed for unit testing. Resets the signal handling back to default
 /// which might be needed in case it was previously overridden
 /// The default signals are: SIGABRT, SIGFPE, SIGILL, SIGSEGV, SIGTERM
-void restoreSignalHandlerToDefault()
+inline void restoreSignalHandlerToDefault()
 {
     overrideSetupSignals(internal::kSignals);
 }

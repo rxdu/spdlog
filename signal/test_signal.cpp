@@ -19,12 +19,12 @@ int main()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         i++;
 
-        // if(i == 50)
-        // {
-        //     std::cout << "raising signal" << std::endl;
-        //     //std::raise(SIGABRT);
-        //     std::raise(SIGINT);
-        // }
+        if(i == 50)
+        {
+            std::cout << "raising signal" << std::endl;
+            std::raise(SIGABRT);
+            // std::raise(SIGINT);
+        }
     }
 
 }

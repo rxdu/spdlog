@@ -261,7 +261,6 @@ void signalHandler(int signal_number, siginfo_t *info, void *unused_context)
     }
 
     details::registry::instance().apply_all([&](std::shared_ptr<spdlog::logger> l) { l->flush(); });
-    details::registry::instance().drop_all();
 
     exitWithDefaultSignalHandler(signal_number);
 }

@@ -25,7 +25,7 @@ inline spdlog::logger::logger(const std::string& logger_name, const It& begin, c
     _last_err_time(0),
     _msg_counter(1)  // message counter will start from 1. 0-message id will be reserved for controll messages
 {
-    spdlog::details::installCrashHandler();
+    spdlog::installCrashHandler();
 
     _err_handler = [this](const std::string &msg)
     {
